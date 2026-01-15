@@ -1,11 +1,8 @@
 import { logIn } from '../auth.js';
 
 /**
- * AuthManager
- * 
- * Manages authentication tokens with caching to avoid
- * unnecessary login calls. Reduces code duplication and
- * improves performance.
+ * Manages authentication tokens with caching to avoid unnecessary login calls. 
+ * Reduces code duplication and improves performance.
  */
 export class AuthManager {
     constructor(config) {

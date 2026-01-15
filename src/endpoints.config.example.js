@@ -1,9 +1,5 @@
 /**
- * Example: Demonstrating 100+ Endpoints Configuration
- * 
- * This file shows how easy it is to add many endpoints to the framework.
- * Simply add entries to the endpoints array - no code duplication required!
- * 
+ * Demonstrating 100+ endpoints configuration, simply add entries to the endpoints array.
  * To use this configuration, import it in endpointTest.js instead of endpoints.config.js
  */
 

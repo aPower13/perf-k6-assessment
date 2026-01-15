@@ -198,6 +198,43 @@ Default stages:
 }
 ```
 
+### Customizing Thresholds
+
+Thresholds are defined in [src/endpointTest.js](src/endpointTest.js) and determine when a test passes or fails.
+
+**Current thresholds for load test:**
+```javascript
+http_req_duration: ['p(95)<1000'],  // 95% of requests < 1 second
+http_req_failed: ['rate<0.1'],      // Less than 10% failures
+```
+
+**Current thresholds for stress test:**
+```javascript
+http_req_duration: ['p(95)<2000'],  // 95% of requests < 2 seconds
+http_req_failed: ['rate<0.2'],      // Less than 20% failures
+```
+
+**To customize thresholds:**
+
+Edit lines 14-22 in [src/endpointTest.js](src/endpointTest.js):
+
+```javascript
+const thresholds = testType === 'stress' 
+    ? {
+        http_req_duration: ['p(95)<2000'],  // Adjust this value (milliseconds)
+        http_req_failed: ['rate<0.2'],      // Adjust this value (0.2 = 20%)
+    }
+    : {
+        http_req_duration: ['p(95)<1000'],  // Adjust this value (milliseconds)
+        http_req_failed: ['rate<0.1'],      // Adjust this value (0.1 = 10%)
+    };
+```
+
+**Example customizations:**
+- Stricter load test: `p(95)<500` and `rate<0.05` (5% errors)
+- More lenient stress test: `p(95)<3000` and `rate<0.3` (30% errors)
+- Different percentiles: `p(99)<2000` (99th percentile instead of 95th)
+
 ## Output Options
 
 ### JSON Output

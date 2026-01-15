@@ -1,8 +1,7 @@
 /**
  * Endpoints Configuration
  * 
- * Define all endpoints in a simple, declarative format.
- * Each endpoint can specify:
+ * Define all endpoints in declarative format. Each endpoint can specify:
  * - method: HTTP method (GET, POST, PUT, DELETE, etc.)
  * - path: API endpoint path
  * - requiresAuth: Whether authentication is needed
@@ -39,7 +38,7 @@ export const endpoints = [
         tags: { endpoint: "enrollCourse" }
     },
     
-    // Example: Adding more endpoints is now trivial
+    // Example: Adding more endpoints
     {
         name: "getUserProfile",
         method: "POST",

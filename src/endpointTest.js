@@ -3,16 +3,6 @@ import { AuthManager } from './authManager.js';
 import { EndpointExecutor } from './executor.js';
 import { executionGroups } from './endpoints.config.js';
 
-/**
- * Refactored Performance Test Framework
- * 
- * Supports both Load Testing and Stress Testing with configurable stages
- * 
- * Usage:
- *   k6 run ./src/endpointTest.js                     # Uses config.testType
- *   k6 run -e TEST_TYPE=load ./src/endpointTest.js   # Force load test
- *   k6 run -e TEST_TYPE=stress ./src/endpointTest.js # Force stress test
- */
 
 // Dynamically select test configuration based on environment variable or config
 const testType = __ENV.TEST_TYPE || config.testType || 'load';
