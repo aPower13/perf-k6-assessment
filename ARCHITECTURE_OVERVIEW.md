@@ -11,10 +11,10 @@ This k6 performance testing framework follows a **modular, configuration-driven 
 │                     endpointTest.js                         │
 │                  (Test Orchestrator)                        │
 │                                                             │
-│  • Reads environment variables & config                    │
-│  • Selects test type (load/stress)                         │
-│  • Configures stages & thresholds                          │
-│  • Invokes executor per iteration                          │
+│  • Reads environment variables & config                     │
+│  • Selects test type (load/stress)                          │
+│  • Configures stages & thresholds                           │
+│  • Invokes executor per iteration                           │
 └──────────────────┬──────────────────────────────────────────┘
                    │
                    │ uses
@@ -23,11 +23,11 @@ This k6 performance testing framework follows a **modular, configuration-driven 
 │                    executor.js                              │
 │               (EndpointExecutor Class)                      │
 │                                                             │
-│  • Builds endpoint map from config                         │
-│  • Interpolates variables (${userId}, etc.)                │
-│  • Constructs URLs & headers                               │
-│  • Executes HTTP requests (sequential/parallel/mixed)      │
-│  • Performs response validation                            │
+│  • Builds endpoint map from config                          │
+│  • Interpolates variables (${userId}, etc.)                 │
+│  • Constructs URLs & headers                                │
+│  • Executes HTTP requests (sequential/parallel/mixed)       │
+│  • Performs response validation                             │
 └──────────────────┬──────────────────────────────────────────┘
                    │
                    │ uses
@@ -37,8 +37,8 @@ This k6 performance testing framework follows a **modular, configuration-driven 
 │                (AuthManager Class)                          │
 │                                                             │
 │  • Handles authentication                                   │
-│  • Caches tokens per VU (99% fewer login calls)            │
-│  • Provides tokens to executor                             │
+│  • Caches tokens per VU (99% fewer login calls)             │
+│  • Provides tokens to executor                              │
 └──────────────────┬──────────────────────────────────────────┘
                    │
                    │ calls
