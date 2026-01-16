@@ -1,5 +1,5 @@
 import http from 'k6/http';
-import { check } from 'k6';
+import { check, sleep } from 'k6';
 import { endpoints } from './endpoints.config.js';
 
 /**
@@ -139,9 +139,17 @@ export class EndpointExecutor {
      */
     executeSequential(endpointNames) {
         const results = [];
-        for (const name of endpointNames) {
+        const thinkTime = parseFloat(__ENV.THINK_TIME || this.config.thinkTime || 0);
+        
+        for (let i = 0; i < endpointNames.length; i++) {
+            const name = endpointNames[i];
             const result = this.execute(name);
             results.push({ name, result });
+            
+            // Add think time after each request except the last one
+            if (thinkTime > 0 && i < endpointNames.length - 1) {
+                sleep(thinkTime);
+            }
         }
         return results;
     }
@@ -189,6 +197,12 @@ export class EndpointExecutor {
 
         // Execute all requests in parallel
         const responses = http.batch(requests);
+        
+        // Add think time after parallel batch (simulates user reviewing results)
+        const thinkTime = parseFloat(__ENV.THINK_TIME || this.config.thinkTime || 0);
+        if (thinkTime > 0) {
+            sleep(thinkTime);
+        }
 
         // Add checks for each response
         const results = [];

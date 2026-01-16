@@ -38,6 +38,29 @@ export const endpoints = [
         tags: { endpoint: "enrollCourse" }
     },
     
+    // Topic Management Endpoints
+    {
+        name: "listAllTopics",
+        method: "GET",
+        path: "/topics",
+        requiresAuth: true,
+        tags: { endpoint: "listAllTopics" }
+    },
+    {
+        name: "getTopicCourses",
+        method: "GET",
+        path: "/topics/${topicId}/courses",
+        requiresAuth: true,
+        tags: { endpoint: "getTopicCourses" }
+    },
+    {
+        name: "getCoursesByTopic",
+        method: "GET",
+        path: "/courses?topic_id=${topicId}",
+        requiresAuth: true,
+        tags: { endpoint: "getCoursesByTopic" }
+    },
+    
     // DISABLED: The following endpoints return errors and are commented out
     // Uncomment and fix paths/methods when API endpoints are available
     
@@ -88,6 +111,18 @@ export const executionGroups = {
     userOperations: {
         strategy: "parallel",
         endpoints: ["listAllCourses", "getCourse"]
+    },
+    
+    // Execute topic-related operations sequentially
+    topicWorkflow: {
+        strategy: "sequential",
+        endpoints: ["listAllTopics", "getTopicCourses", "getCoursesByTopic"]
+    },
+    
+    // Execute all read operations in parallel
+    allReads: {
+        strategy: "parallel",
+        endpoints: ["listAllCourses", "getCourse", "listAllTopics", "getTopicCourses", "getCoursesByTopic"]
     },
     
     // Mixed strategy: demonstrates sequential followed by parallel execution

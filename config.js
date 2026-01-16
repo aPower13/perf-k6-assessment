@@ -13,6 +13,11 @@ export default {
   // Execution group to use (see src/endpoints.config.js)
   "executionGroup": "courseWorkflow",
   
+  // Think time between requests in seconds (simulates user reading/thinking)
+  // Can be overridden with THINK_TIME environment variable
+  // Set to 0 for no delay, or use decimals (e.g., 0.5 for 500ms)
+  "thinkTime": 1,
+  
   // Additional variables for endpoint interpolation
   "variables": {},
   

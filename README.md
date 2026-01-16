@@ -124,6 +124,40 @@ Via environment variable:
 k6 run -e EXECUTION_GROUP=userOperations ./src/endpointTest.js
 ```
 
+### Configuring Think Time
+
+Think time simulates realistic user behavior by adding delays between requests (e.g., users reading content before clicking next action).
+
+In config.js:
+```javascript
+"thinkTime": 1  // 1 second delay between requests (default)
+```
+
+Via environment variable (overrides config.js):
+```bash
+# 2 second think time
+k6 run -e THINK_TIME=2 ./src/endpointTest.js
+
+# 500ms think time
+k6 run -e THINK_TIME=0.5 ./src/endpointTest.js
+
+# No think time (fire requests immediately)
+k6 run -e THINK_TIME=0 ./src/endpointTest.js
+```
+
+**Think Time Behavior:**
+- **Sequential strategy**: Delay added between each request in the sequence
+- **Parallel strategy**: Delay added after the entire batch completes
+- **Default value**: 1 second (balances realism and test duration)
+- **Recommended for load tests**: 1-3 seconds
+- **Recommended for stress tests**: 0-0.5 seconds (maximize throughput)
+
+**Example with combined options:**
+```bash
+# Load test with 2 second think time
+k6 run -e TEST_TYPE=load -e THINK_TIME=2 -e EXECUTION_GROUP=courseWorkflow ./src/endpointTest.js
+```
+
 ### Available Execution Groups
 
 The framework includes these pre-configured groups in [src/endpoints.config.js](src/endpoints.config.js):
@@ -293,6 +327,8 @@ k6 run -e TEST_TYPE=load ./src/endpointTest.js --duration 30s --vus 5
 
 ### Step 1: Define the endpoint in src/endpoints.config.js
 
+#### Basic Endpoint Definition
+
 ```javascript
 export const endpoints = [
     // ... existing endpoints
@@ -315,6 +351,57 @@ export const endpoints = [
         tags: { endpoint: "createResource" }
     }
 ];
+```
+
+#### Advanced Endpoint Definition
+
+Endpoints can include additional fields for more control over execution, validation, and behavior:
+
+```javascript
+{
+  name: 'enrollCourse',
+  method: 'POST',
+  path: '/enroll',
+  requiresAuth: true,
+  execution: 'sequential',
+  group: 'enrollment',
+  order: 1, // Execution order in sequential group
+  weight: 20, // Execution probability weight (higher = more frequent)
+  params: {
+    body: {
+      course_id: '${courseId}',
+      user_id: '${userId}'
+    }
+  },
+  validation: {
+    status: 200, // Expected HTTP status code
+    responseTime: 1000, // Maximum acceptable response time (ms)
+    assertions: [
+      { path: 'enrolled', type: 'equals', value: true },
+      { path: 'status', type: 'equals', value: 'active' }
+    ]
+  }
+}
+```
+
+**Available Fields:**
+- `name` (required): Unique endpoint identifier
+- `method` (required): HTTP method (GET, POST, PUT, DELETE, etc.)
+- `path` (required): API endpoint path with variable interpolation support
+- `requiresAuth`: Whether authentication token is needed (default: true)
+- `body`: Request body for POST/PUT requests
+- `tags`: Custom tags for k6 metrics grouping
+- `execution`: Execution strategy hint ('sequential', 'parallel', 'mixed')
+- `group`: Logical grouping for related endpoints
+- `order`: Execution order within sequential groups (lower runs first)
+- `weight`: Execution frequency weight for load distribution
+- `validation`: Response validation rules
+  - `status`: Expected HTTP status code
+  - `responseTime`: Maximum acceptable response time in milliseconds
+  - `assertions`: Array of validation rules for response body
+    - `path`: JSONPath to the field to validate
+    - `type`: Validation type ('equals', 'contains', 'greaterThan', etc.)
+    - `value`: Expected value for comparison
 ```
 
 ### Step 2: (Optional) Add to an execution group
@@ -490,6 +577,232 @@ Token is cached per VU. If seeing auth errors, check token expiration settings.
 4. **Keep Groups Focused**: Don't mix unrelated endpoints in execution groups
 5. **Clean Outputs**: Use output options to save results for analysis
 6. **Regular Testing**: Run load tests regularly to catch performance regressions early
+
+## Future Enhancements
+
+### Data-Driven Testing
+
+Enhance the framework with external data sources to test with realistic, varied data sets instead of hardcoded values.
+
+**Implementation Example:**
+
+Create a data file `testdata/users.csv`:
+```csv
+userId,courseId,topicId
+13,19,1
+14,20,2
+15,21,3
+16,22,1
+```
+
+Update `src/endpointTest.js` to use SharedArray for efficient data sharing:
+
+```javascript
+import { SharedArray } from 'k6/data';
+
+// Load test data (shared across all VUs for memory efficiency)
+const testData = new SharedArray('testData', function() {
+  return JSON.parse(open('./testdata/users.csv'));
+});
+
+export default function() {
+  // Get unique data per VU/iteration
+  const data = testData[__VU % testData.length];
+  
+  // Override config with data from CSV
+  config.userId = data.userId;
+  config.courseId = data.courseId;
+  config.variables.topicId = data.topicId;
+  
+  // Execute with dynamic data
+  executor.executeGroup(selectedGroup);
+}
+```
+
+**Benefits:**
+- Test with realistic production-like data
+- Uncover edge cases and data-dependent bugs
+- Validate pagination, filtering, and search with varied inputs
+- Simulate different user types and behaviors
+- Easy to update test data without code changes
+
+**Advanced Data-Driven Patterns:**
+
+```javascript
+// 1. Random data selection
+const randomData = testData[Math.floor(Math.random() * testData.length)];
+
+// 2. Sequential data access
+const sequentialData = testData[__ITER % testData.length];
+
+// 3. Weighted data distribution (80% type A, 20% type B)
+const dataIndex = Math.random() < 0.8 ? 0 : 1;
+
+// 4. JSON data from external API
+const testData = new SharedArray('users', function() {
+  const response = http.get('https://api.example.com/test-users');
+  return JSON.parse(response.body);
+});
+
+// 5. CSV parsing with papaparse
+import papaparse from 'https://jslib.k6.io/papaparse/5.1.1/index.js';
+const csvData = new SharedArray('csvData', function() {
+  return papaparse.parse(open('./testdata/users.csv'), { header: true }).data;
+});
+```
+
+### Distributed Load Testing with k6 Operator
+
+For large-scale load testing that exceeds single-machine capacity, deploy k6 in Kubernetes using the k6 Operator.
+
+**Why k6 Operator:**
+- **Scale Beyond Single Machine**: Distribute load across multiple pods
+- **High Load Generation**: Simulate thousands of concurrent users
+- **Cloud Native**: Run tests in the same environment as your application
+- **Cost Efficient**: Use cluster resources, auto-scale test runners
+- **CI/CD Integration**: Automated performance testing in pipelines
+
+**Installation:**
+
+```bash
+# Install k6 operator in your Kubernetes cluster
+kubectl create namespace k6-operator-system
+kubectl apply -f https://github.com/grafana/k6-operator/releases/latest/download/bundle.yaml
+```
+
+**Create k6 Test Resource:**
+
+Save as `k6-test.yaml`:
+
+```yaml
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: perf-k6-assessment-distributed
+  namespace: default
+spec:
+  parallelism: 5  # Run 5 k6 pods in parallel
+  script:
+    configMap:
+      name: k6-test-script
+      file: endpointTest.js
+  arguments: -e TEST_TYPE=stress -e EXECUTION_GROUP=fullWorkflow
+  separate: false
+  runner:
+    image: grafana/k6:latest
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 512Mi
+      requests:
+        cpu: 500m
+        memory: 256Mi
+    env:
+      - name: THINK_TIME
+        value: "1"
+      - name: TEST_TYPE
+        value: "stress"
+```
+
+**Create ConfigMap with your test scripts:**
+
+```bash
+# Create configmap from your test directory
+kubectl create configmap k6-test-script \
+  --from-file=src/ \
+  --from-file=config.js \
+  --from-file=auth.js \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+**Run Distributed Test:**
+
+```bash
+# Apply the test
+kubectl apply -f k6-test.yaml
+
+# Watch test progress
+kubectl get testrun -w
+
+# View test logs from all pods
+kubectl logs -l k6_cr=perf-k6-assessment-distributed -f
+
+# Get test results
+kubectl describe testrun perf-k6-assessment-distributed
+```
+
+**Advanced k6 Operator Configuration:**
+
+```yaml
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: high-scale-test
+spec:
+  parallelism: 10  # 10 distributed pods
+  script:
+    configMap:
+      name: k6-test-script
+      file: endpointTest.js
+  arguments: --vus 100 --duration 30m -e TEST_TYPE=stress
+  
+  # Starter and initializer for setup/teardown
+  starter:
+    image: curlimages/curl:latest
+    command: ["sh", "-c"]
+    args: ["echo 'Starting distributed test'"]
+  
+  # Clean up after test
+  cleanup: "post"
+  
+  runner:
+    image: grafana/k6:latest
+    metadata:
+      labels:
+        test-type: performance
+    affinity:
+      # Spread pods across nodes for better distribution
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: k6_cr
+                operator: In
+                values:
+                - high-scale-test
+            topologyKey: kubernetes.io/hostname
+```
+
+**Benefits of Distributed Testing:**
+- **10x-100x Load Capacity**: Single machine ~1K VUs → Distributed 10K-100K VUs
+- **Geographical Distribution**: Deploy to multiple regions for geo-testing
+- **Isolation**: Tests don't impact production infrastructure
+- **Parallel Execution**: Multiple test scenarios simultaneously
+- **Resource Management**: Kubernetes handles scaling, scheduling, recovery
+
+**Monitoring Integration:**
+
+```yaml
+# Add Prometheus annotations for metrics scraping
+spec:
+  runner:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "6565"
+```
+
+**Example: 50K VUs Distributed Test:**
+
+```yaml
+spec:
+  parallelism: 50  # 50 pods × 1K VUs each = 50K VUs
+  arguments: --vus 1000 --duration 1h
+```
+
+This architecture enables enterprise-scale load testing while maintaining the same simple, configuration-driven approach.
 
 
 
