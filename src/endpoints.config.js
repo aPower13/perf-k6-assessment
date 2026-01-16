@@ -38,10 +38,13 @@ export const endpoints = [
         tags: { endpoint: "enrollCourse" }
     },
     
-    // Example: Adding more endpoints
+    // DISABLED: The following endpoints return errors and are commented out
+    // Uncomment and fix paths/methods when API endpoints are available
+    
+    /*
     {
         name: "getUserProfile",
-        method: "POST",
+        method: "POST",  // API returns 405 for both GET and POST
         path: "/users/${userId}",
         requiresAuth: true,
         tags: { endpoint: "getUserProfile" }
@@ -58,11 +61,12 @@ export const endpoints = [
     },
     {
         name: "getCourseProgress",
-        method: "GET",
+        method: "GET",  // API returns 404 - endpoint doesn't exist
         path: "/progress/${userId}/${courseId}",
         requiresAuth: true,
         tags: { endpoint: "getCourseProgress" }
     }
+    */
 ];
 
 /**
@@ -80,13 +84,13 @@ export const executionGroups = {
         endpoints: ["listAllCourses", "getCourse", "enrollCourse"]
     },
     
-    // Execute user operations in parallel (no dependencies)
+    // Execute course queries in parallel (fast read operations)
     userOperations: {
         strategy: "parallel",
         endpoints: ["listAllCourses", "getCourse"]
     },
     
-    // Mixed strategy: sequential groups executed in parallel
+    // Mixed strategy: demonstrates sequential followed by parallel execution
     fullWorkflow: {
         strategy: "mixed",
         groups: [
@@ -96,7 +100,7 @@ export const executionGroups = {
             },
             {
                 strategy: "parallel",
-                endpoints: ["listAllCourses", "getCourse"]
+                endpoints: ["getCourse", "listAllCourses"]  // Parallel queries after enrollment
             }
         ]
     }

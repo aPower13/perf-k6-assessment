@@ -56,10 +56,10 @@ k6 run -e TEST_TYPE=stress ./src/endpointTest.js --duration 30s --vus 10
 k6 run -e TEST_TYPE=stress -e EXECUTION_GROUP=fullWorkflow --out csv=stress-results.csv ./src/endpointTest.js
 
 # Run with more lenient thresholds (stress mode has 20% error threshold instead of 10%)
-k6 run -e TEST_TYPE=stress -e EXECUTION_GROUP=fullPlatformTest ./src/endpointTest.js
+k6 run -e TEST_TYPE=stress -e EXECUTION_GROUP=fullWorkflow ./src/endpointTest.js
 
 # Export summary for detailed analysis
-k6 run -e EXECUTION_GROUP=fullPlatformTest ./src/endpointTest.js --summary-export=summary.json
+k6 run -e EXECUTION_GROUP=fullWorkflow ./src/endpointTest.js --summary-export=summary.json
 ```
 
 ## Architecture
@@ -126,25 +126,24 @@ k6 run -e EXECUTION_GROUP=userOperations ./src/endpointTest.js
 
 ### Available Execution Groups
 
-The framework includes these pre-configured groups in [src/endpoints.config.example.js](src/endpoints.config.example.js):
+The framework includes these pre-configured groups in [src/endpoints.config.js](src/endpoints.config.js):
 
 | Group Name | Strategy | Endpoints | Use Case |
 |------------|----------|-----------|----------|
-| `fullPlatformTest` | Mixed | 10 endpoints (3 sequential groups + 1 parallel) | Complex workflow testing |
-| `allCourseEndpoints` | Parallel | 10 course-related endpoints | Fast course API testing |
-| `userWorkflow` | Sequential | 5 user-related endpoints | User journey testing |
-| `loadTest` | Parallel | 9 independent endpoints | High-throughput load testing |
+| `courseWorkflow` | Sequential | 3 course endpoints | Course enrollment workflow |
+| `userOperations` | Parallel | 2 course endpoints | Fast parallel course queries |
+| `fullWorkflow` | Mixed | 5 endpoints (sequential + parallel) | Complex mixed-strategy workflow |
 
 **Run specific group:**
 ```bash
+# Sequential strategy
+k6 run -e EXECUTION_GROUP=courseWorkflow ./src/endpointTest.js
+
+# Parallel strategy
+k6 run -e EXECUTION_GROUP=userOperations ./src/endpointTest.js
+
 # Mixed strategy (sequential + parallel)
-k6 run -e EXECUTION_GROUP=fullPlatformTest ./src/endpointTest.js
-
-# All parallel
-k6 run -e EXECUTION_GROUP=allCourseEndpoints ./src/endpointTest.js
-
-# All sequential
-k6 run -e EXECUTION_GROUP=userWorkflow ./src/endpointTest.js
+k6 run -e EXECUTION_GROUP=fullWorkflow ./src/endpointTest.js
 ```
 
 ### Customizing Load Test Stages
@@ -268,14 +267,14 @@ k6 run --out influxdb=http://localhost:8086/k6 ./src/endpointTest.js
 # Custom duration and VUs
 k6 run -e TEST_TYPE=load ./src/endpointTest.js --duration 30s --vus 10
 
-# Override execution group (use mixed strategy)
-k6 run -e EXECUTION_GROUP=fullPlatformTest ./src/endpointTest.js
-
 # Override execution group (use sequential strategy)
-k6 run -e EXECUTION_GROUP=userWorkflow ./src/endpointTest.js
+k6 run -e EXECUTION_GROUP=courseWorkflow ./src/endpointTest.js
 
 # Override execution group (use parallel strategy)
-k6 run -e EXECUTION_GROUP=loadTest ./src/endpointTest.js
+k6 run -e EXECUTION_GROUP=userOperations ./src/endpointTest.js
+
+# Override execution group (use mixed strategy)
+k6 run -e EXECUTION_GROUP=fullWorkflow ./src/endpointTest.js
 
 # Export results to CSV
 k6 run --out csv=results.csv ./src/endpointTest.js
@@ -384,7 +383,7 @@ fullWorkflow: {
 After running a test, k6 displays detailed check results showing which endpoints were executed:
 
 ```bash
-k6 run -e EXECUTION_GROUP=fullPlatformTest ./src/endpointTest.js
+k6 run -e EXECUTION_GROUP=fullWorkflow ./src/endpointTest.js
 ```
 
 The output shows each endpoint with its pass/fail status:
@@ -407,25 +406,26 @@ The output shows each endpoint with its pass/fail status:
 
 ### Verify All Endpoints in a Group
 
-To see which endpoints are configured in a group, check [src/endpoints.config.example.js](src/endpoints.config.example.js):
+To see which endpoints are configured in a group, check [src/endpoints.config.js](src/endpoints.config.js):
 
 ```javascript
-fullPlatformTest: {
+fullWorkflow: {
     strategy: "mixed",
     groups: [
         { strategy: "sequential", endpoints: ["listAllCourses", "getCourse", "enrollCourse"] },
-        { strategy: "parallel", endpoints: ["getUserProfile", "getCourseProgress", "getAssignments"] },
-        { strategy: "sequential", endpoints: ["getQuiz", "startQuiz", "completeQuiz", "getQuizResults"] }
+        { strategy: "parallel", endpoints: ["listAllCourses", "getCourse"] }
     ]
 }
 ```
+
+**Note**: See [src/endpoints.config.example.js](src/endpoints.config.example.js) for additional examples with 120+ endpoints.
 
 ### Using Summary to Track Execution
 
 Add this to see detailed execution metrics:
 
 ```bash
-k6 run -e EXECUTION_GROUP=fullPlatformTest ./src/endpointTest.js --summary-export=summary.json
+k6 run -e EXECUTION_GROUP=fullWorkflow ./src/endpointTest.js --summary-export=summary.json
 ```
 
 This creates a `summary.json` file with detailed metrics for each endpoint.
@@ -471,9 +471,9 @@ If you see `ERRO[0062] thresholds on metrics 'http_req_failed' have been crossed
    ```
 4. **Reduce load** - Lower VUs or duration:
    ```bash
-   k6 run -e EXECUTION_GROUP=fullPlatformTest ./src/endpointTest.js --vus 2 --duration 30s
+   k6 run -e EXECUTION_GROUP=fullWorkflow ./src/endpointTest.js --vus 2 --duration 30s
    ```
-5. **Fix endpoint configs** - Update paths in [src/endpoints.config.example.js](src/endpoints.config.example.js)
+5. **Fix endpoint configs** - Update paths in [src/endpoints.config.js](src/endpoints.config.js)
 6. **Use existing working endpoints** - Switch to a group with verified endpoints:
    ```bash
    k6 run -e EXECUTION_GROUP=courseWorkflow ./src/endpointTest.js
