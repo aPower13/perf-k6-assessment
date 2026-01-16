@@ -8,7 +8,7 @@ import { executionGroups } from './endpoints.config.js';
 const testType = __ENV.TEST_TYPE || config.testType || 'load';
 const testConfig = testType === 'stress' ? config.stressTest : config.loadTest;
 
-console.log(`🔧 Running ${testType.toUpperCase()} test configuration`);
+console.log(`Running ${testType.toUpperCase()} test configuration`);
 
 // Dynamic thresholds based on test type
 const thresholds = testType === 'stress' 
