@@ -124,7 +124,7 @@ export class EndpointExecutor {
         };
 
         // Show which VU is working and its iteration count
-        console.log(`VU-${__VU} | Iteration: ${__ITER} | Executing endpoint: ${endpointName}`);
+        //console.log(`VU-${__VU} | Iteration: ${__ITER} | Executing endpoint: ${endpointName}`);
 
         // Execute the request
         const response = http.request(endpoint.method, url, body, params);
@@ -200,13 +200,13 @@ export class EndpointExecutor {
 
         // Show which VU is working and its iteration count
         // Validate that test will run in parallel mode
-        console.log(`VU-${__VU} | Iteration: ${__ITER} | Processing parallel batch with ${endpointNames.length} endpoints`);
+        //console.log(`VU-${__VU} | Iteration: ${__ITER} | Processing parallel batch with ${endpointNames.length} endpoints`);
 
         // Execute all requests in parallel
         const responses = http.batch(requests);
 
         // Log completion of the batch
-        console.log(`VU-${__VU} | Iteration: ${__ITER} | ${JSON.stringify(Object.keys(requests))} completed`);
+        //console.log(`VU-${__VU} | Iteration: ${__ITER} | ${JSON.stringify(Object.keys(requests))} completed`);
         
         // Add think time after parallel batch (simulates user reviewing results)
         const thinkTime = parseFloat(__ENV.THINK_TIME || this.config.thinkTime || 0);
