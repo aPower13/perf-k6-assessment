@@ -2,6 +2,8 @@ import config from '../config.js';
 import { AuthManager } from './authManager.js';
 import { EndpointExecutor } from './executor.js';
 import { executionGroups } from './endpoints.config.js';
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
+import { htmlReport } from 'https://raw.githubusercontent.com/benc-uk/k6-reporter/latest/dist/bundle.js'
 
 
 // Dynamically select test configuration based on environment variable or config
@@ -43,4 +45,11 @@ export default function () {
     }
     
     executor.executeGroup(group);
+}
+
+export function handleSummary(data) {
+    return {
+        'stdout': textSummary(data, { indent: ' ', enableColors: true }),
+        'test-report.html': htmlReport(data),
+    };
 }
